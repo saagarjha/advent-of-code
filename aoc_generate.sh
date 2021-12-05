@@ -12,8 +12,17 @@ cat > "$1/script.py" <<EOF
 
 import pathlib
 
+import os
+import sys
+import inspect
+
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+sys.path.insert(0, os.path.dirname(os.path.dirname(currentdir)))
+
+from aoc import *
+
 input = pathlib.Path("input").read_text().strip()
-numbers = list(map(int, input.split("\n")))
+numbers = input.split("\n")
 EOF
 chmod +x "$1/script.py"
 subl "$1/script.py"
