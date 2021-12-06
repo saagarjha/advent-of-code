@@ -1,13 +1,3 @@
-#!/bin/bash
-
-set -eux
-
-if [ "$PWD" != "/Users/saagarjha/Developer/advent-of-code/2021" ]; then
-	exit 1
-fi
-
-mkdir "$1"
-cat > "$1/script.py" <<EOF
 #!/usr/bin/env python3
 
 import pathlib
@@ -26,8 +16,14 @@ if "AOC_SAMPLE" in os.environ:
 	input_filename = "sample"
 
 input = pathlib.Path(input_filename).read_text().strip()
-numbers = input.split("\n")
-EOF
-chmod +x "$1/script.py"
-subl "$1/script.py"
-../hud "./$1" & disown
+fish = input.split(",").map(int)
+for _ in range(80):
+	new_fish = []
+	for fish in fish:
+		if fish == 0:
+			new_fish.append(6)
+			new_fish.append(8)
+		else:
+			new_fish.append(fish - 1)
+	fish = new_fish
+print(fish.len)

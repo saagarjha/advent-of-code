@@ -233,6 +233,9 @@ def __list_sorted(self):
 	copy.sort()
 	return copy
 
+def __list_rotate(self, index):
+	return self[index:] + self[:index]
+
 def __list2d_transpose(self):
 	return zip(*self).map(list)
 
@@ -294,8 +297,23 @@ for type in [list, str, tuple]:
 	__extend(type, 'enumerated', __list_enumerated)
 	__extend(type, 'swap', __list_swap)
 	__extend(type, 'sorted', __list_sorted)
+	__extend(type, 'rotate', __list_rotate)
 
 __extend(set, 'min', __list_len)
 __extend(set, 'max', __list_len)
 __extend(set, 'flatten', __list_flatten)
 
+def __sj_irange(min, max, stride):
+	result = []
+	i = min
+	while True:
+		result.append(i)
+		i += stride
+		if i > max:
+			return result
+
+def sj_irange(min, max, stride=1):
+	return __sj_irange(min, max, stride) if min <= max else __sj_irange(-min, -max, stride).map(operator.neg)
+
+def sj_range(min, max, stride=1):
+	return list(range(min, max, stride)) if min <= max else range(-min, -max, stride).map(operator.neg)
