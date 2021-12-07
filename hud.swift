@@ -40,7 +40,13 @@ class OutputViewController: NSViewController {
 		process.standardError = pipe
 		do {
 			try process.run()
-			outputTextView?.string = String(data: try pipe.fileHandleForReading.readToEnd()!, encoding: .utf8)!
+			DispatchQueue.global().async {
+				let data = try? pipe.fileHandleForReading.readToEnd()
+				let string = data.flatMap { String(data: $0, encoding: .utf8) }
+				DispatchQueue.main.async {
+					self.outputTextView?.string = string ?? ""
+				}
+			}
 		} catch {
 			outputTextView?.string = error.localizedDescription
 		}

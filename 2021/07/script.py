@@ -1,18 +1,9 @@
-#!/bin/bash
-
-set -eux
-
-if [ "$PWD" != "/Users/saagarjha/Developer/advent-of-code/2021" ]; then
-	exit 1
-fi
-
-mkdir "$1"
-cat > "$1/script.py" <<EOF
 #!/usr/bin/env python3
+
+import pathlib
 
 from collections import Counter
 import os
-import pathlib
 import sys
 import inspect
 
@@ -26,8 +17,17 @@ if "AOC_SAMPLE" in os.environ:
 	input_filename = "sample"
 
 input = pathlib.Path(input_filename).read_text().strip()
-numbers = input.split("\n")
-EOF
-chmod +x "$1/script.py"
-subl "$1/script.py"
-../hud "./$1" & disown
+numbers = input.split(",").map(int)
+min = numbers.min()
+max = numbers.max()
+sum = 0
+low_sum = 1111111111
+low_i = -1
+for i in sj_irange(min, max):
+	sum = 0
+	for crab in numbers:
+		sum += abs(i - crab)
+	if sum < low_sum:
+		low_i = i
+		low_sum = sum
+print(low_sum)
