@@ -186,6 +186,7 @@ let screen = NSScreen.main!.visibleFrame
 let offset: CGFloat = 16
 window.setFrameOrigin(NSPoint(x: screen.maxX - offset - window.frame.width, y: screen.maxY - 4 * offset - window.frame.height))
 window.level = .floating
+window.collectionBehavior = .canJoinAllSpaces
 NSApp.setActivationPolicy(.accessory)
 window.makeKeyAndOrderFront(nil)
 
