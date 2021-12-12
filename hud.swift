@@ -6,10 +6,50 @@ func solvesFromScoreboard() async throws -> String {
 	let regex = try NSRegularExpression(pattern: #"">\s*\#(day)\s*<span class="stats-both">\s*([0-9]+)</span>\s*<span class="stats-firstonly">\s*([0-9]+)<"#, options: [])
 	let matches = regex.matches(in: string as String, options: [], range: NSRange(location: 0, length: string.length))
 	guard let match = matches.first,
-	match.numberOfRanges == 3 else {
+		match.numberOfRanges == 3
+	else {
 		return ""
 	}
-	return "\(string.substring(with: match.range(at: 1))) \(string.substring(with: match.range(at: 2)))"
+	let goldString = string.substring(with: match.range(at: 1))
+	let silverString = string.substring(with: match.range(at: 2))
+	if let gold = Int(goldString.trimmingCharacters(in: .whitespaces)),
+		let silver = Int(silverString.trimmingCharacters(in: .whitespaces))
+	{
+		return "**: \(gold) *: \(gold + silver)"
+	} else {
+		return "\(goldString) \(silverString)"
+	}
+}
+
+class Buffer {
+	let lock: UnsafeMutablePointer<os_unfair_lock>
+
+	var _text: String = ""
+	var text: String {
+		os_unfair_lock_lock(lock)
+		defer {
+			os_unfair_lock_unlock(lock)
+		}
+		return _text
+	}
+
+	func append(_ content: String) {
+		os_unfair_lock_lock(lock)
+		defer {
+			os_unfair_lock_unlock(lock)
+		}
+		_text.append(content)
+	}
+
+	init() {
+		lock = .allocate(capacity: 1)
+		// Note: technically wrong
+		lock.initialize(to: os_unfair_lock())
+	}
+
+	deinit {
+		lock.deallocate()
+	}
 }
 
 @MainActor
@@ -17,6 +57,7 @@ class OutputViewController: NSViewController {
 	var outputTextView: NSTextView!
 	var sample: Bool!
 	var process: Process!
+	var lines = 0
 
 	override func loadView() {
 		let scrollView = NSTextView.scrollablePlainDocumentContentTextView()
@@ -27,9 +68,13 @@ class OutputViewController: NSViewController {
 		view = scrollView
 	}
 
+	override func viewDidAppear() {
+		super.viewDidAppear()
+		outputTextView.scrollRangeToVisible(NSRange(location: outputTextView.string.utf16.count, length: 0))
+	}
+
 	func updateOutput() {
-		process?.terminate()
-		process = Process()
+		let process = Process()
 		process.launchPath = root.appendingPathComponent("script.py").path
 		process.currentDirectoryURL = root
 		if sample {
@@ -38,24 +83,48 @@ class OutputViewController: NSViewController {
 		let pipe = Pipe()
 		process.standardOutput = pipe
 		process.standardError = pipe
-		do {
-			try process.run()
-			DispatchQueue.global().async {
-				let data = try? pipe.fileHandleForReading.readToEnd()
-				let string = data.flatMap { String(data: $0, encoding: .utf8) }
-				DispatchQueue.main.async {
-					self.outputTextView?.string = string ?? ""
-				}
+		Task { @MainActor in
+			let result = await Task { @MainActor () -> String in
+				try process.run()
+				self.process?.terminate()
+				self.process = process
+				return try await Task { () -> String in
+					let buffer = Buffer()
+					let updateTask = Task { @MainActor in
+						while true {
+							outputTextView.string = buffer.text
+							outputTextView.scrollRangeToVisible(NSRange(location: outputTextView.string.utf16.count, length: 0))
+							try await Task.sleep(nanoseconds: 2_000_000_000)
+						}
+					}
+					defer {
+						updateTask.cancel()
+					}
+					lines = 0
+					for try await line in pipe.fileHandleForReading.bytes.lines {
+						buffer.append(line)
+						buffer.append("\n")
+						lines += 1
+					}
+					return buffer.text
+				}.value
+			}.result
+			let output: String
+			switch result {
+				case .success(let string):
+					output = string
+				case .failure(let error):
+					output = error.localizedDescription
 			}
-		} catch {
-			outputTextView?.string = error.localizedDescription
+			outputTextView.string = output
+			outputTextView.scrollRangeToVisible(NSRange(location: outputTextView.string.utf16.count, length: 0))
 		}
-		outputTextView?.scrollRangeToVisible(NSRange(location: outputTextView.string.utf16.count, length: 0))
 	}
 }
 
 @MainActor
 class ViewController: NSViewController {
+	var start: Date!
 	var source: DispatchSourceFileSystemObject!
 	var timeLabel: NSTextField!
 	var timeLabelTask: Task<Void, Error>!
@@ -63,6 +132,11 @@ class ViewController: NSViewController {
 	var tabViewController: NSTabViewController!
 	var sampleOutputViewController: OutputViewController!
 	var realOutputViewController: OutputViewController!
+	var currentOutputViewController: OutputViewController {
+		tabViewController.tabViewItems[tabViewController.selectedTabViewItemIndex].viewController as! OutputViewController
+	}
+	var outputInfoLabel: NSTextField!
+	var copyButton: NSButton!
 
 	deinit {
 		source.cancel()
@@ -87,6 +161,7 @@ class ViewController: NSViewController {
 		timeLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 16, weight: .regular)
 		timeLabel.textColor = .secondaryLabelColor
 		timeLabel.translatesAutoresizingMaskIntoConstraints = false
+		timeLabel.addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(resetStart(_:))))
 		view.addSubview(timeLabel)
 
 		var components = DateComponents()
@@ -95,19 +170,9 @@ class ViewController: NSViewController {
 		components.day = day - 1
 		components.hour = 21
 		components.minute = 0
-		// components.timeZone = TimeZone.init(abbreviation: "America/New_York")
-		let start = Calendar(identifier: .gregorian).date(from: components)!
+		components.timeZone = TimeZone.init(abbreviation: "America/New_York")
+		start = Calendar(identifier: .gregorian).date(from: components)!
 		let formatter = DateComponentsFormatter()
-		labelUpdateTask = Task {
-			var solves = ""
-			for i in 0..<(.max) {
-				if i % 5 == 0 {
-					solves = (try? await solvesFromScoreboard()) ?? solves
-				}
-				timeLabel.stringValue = "\(solves) \(formatter.string(from: Date().timeIntervalSince(start))!)"
-				try await Task.sleep(nanoseconds: 1_000_000_000)
-			}
-		}
 
 		sampleOutputViewController = OutputViewController()
 		sampleOutputViewController.sample = true
@@ -121,7 +186,29 @@ class ViewController: NSViewController {
 		tabViewController.addChild(sampleOutputViewController)
 		tabViewController.addChild(realOutputViewController)
 		view.addSubview(tabViewController.view)
-		
+
+		outputInfoLabel = NSTextField(labelWithString: "0 lines")
+		outputInfoLabel.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(outputInfoLabel)
+
+		copyButton = NSButton(title: "Copy Last", target: self, action: #selector(copyLast(_:)))
+		copyButton.controlSize = .large
+		copyButton.translatesAutoresizingMaskIntoConstraints = false
+		copyButton.keyEquivalent = "\r"
+		view.addSubview(copyButton)
+
+		labelUpdateTask = Task {
+			var solves = ""
+			for i in 0..<(.max) {
+				if i % 2 == 0 {
+					solves = (try? await solvesFromScoreboard()) ?? solves
+				}
+				timeLabel.stringValue = "\(solves) \(formatter.string(from: Date().timeIntervalSince(start))!)"
+				outputInfoLabel.stringValue = "\(currentOutputViewController.lines) lines"
+				try await Task.sleep(nanoseconds: 1_000_000_000)
+			}
+		}
+
 		NSLayoutConstraint.activate([
 			visualEffectView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
 			visualEffectView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
@@ -136,9 +223,14 @@ class ViewController: NSViewController {
 			tabViewController.view.leadingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: view.leadingAnchor, multiplier: 1),
 			view.trailingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: tabViewController.view.trailingAnchor, multiplier: 1),
 			tabViewController.view.topAnchor.constraint(equalToSystemSpacingBelow: titleLabel.bottomAnchor, multiplier: 1),
-			view.bottomAnchor.constraint(equalToSystemSpacingBelow: tabViewController.view.bottomAnchor, multiplier: 1),
 			tabViewController.view.widthAnchor.constraint(greaterThanOrEqualToConstant: 400),
 			tabViewController.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 500),
+			outputInfoLabel.leadingAnchor.constraint(equalToSystemSpacingAfter: view.leadingAnchor, multiplier: 1),
+			copyButton.leadingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: outputInfoLabel.trailingAnchor, multiplier: 1),
+			copyButton.firstBaselineAnchor.constraint(equalTo: outputInfoLabel.firstBaselineAnchor),
+			copyButton.topAnchor.constraint(equalToSystemSpacingBelow: tabViewController.view.bottomAnchor, multiplier: 1),
+			view.trailingAnchor.constraint(equalToSystemSpacingAfter: copyButton.trailingAnchor, multiplier: 1),
+			view.bottomAnchor.constraint(equalToSystemSpacingBelow: copyButton.bottomAnchor, multiplier: 1),
 		])
 		self.view = view
 
@@ -148,6 +240,19 @@ class ViewController: NSViewController {
 		}
 		source.resume()
 		update()
+	}
+
+	@IBAction func resetStart(_ sender: Any?) {
+		start = Date()
+	}
+
+	@IBAction func copyLast(_ sender: Any?) {
+		tabViewController.selectedTabViewItemIndex = 1
+		guard let last = currentOutputViewController.outputTextView.string.split(separator: "\n").last else {
+			return
+		}
+		NSPasteboard.general.declareTypes([.string], owner: nil)
+		NSPasteboard.general.setData(Data(last.utf8), forType: .string)
 	}
 
 	func update() {
@@ -225,5 +330,24 @@ menu.items = [
 	item
 ]
 NSApp.mainMenu = menu
+
+var watchdogCheckin = true
+let watchdogQueue = DispatchQueue(label: "watchdog")
+let watchdogTimer = DispatchSource.makeTimerSource(queue: watchdogQueue)
+watchdogTimer.schedule(deadline: .now(), repeating: .seconds(5))
+watchdogTimer.setEventHandler {
+	guard watchdogCheckin else {
+		execve(CommandLine.arguments.first!, CommandLine.unsafeArgv, environ)
+		exit(1)
+	}
+	watchdogCheckin = false
+}
+watchdogTimer.activate()
+let responsivenessTimer = Timer(fire: Date(), interval: 1, repeats: true) { _ in
+	watchdogQueue.sync {
+		watchdogCheckin = true
+	}
+}
+RunLoop.main.add(responsivenessTimer, forMode: .common)
 
 NSApp.run()

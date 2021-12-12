@@ -186,7 +186,7 @@ def __list_chunk_by(self, predicate):
 	return results
 
 def __list_str_join(self, joiner=""):
-	return joiner.join(self)
+	return joiner.join(self.map(str))
 
 def __list_has_prefix(self, other):
 	if self.len < other.len:

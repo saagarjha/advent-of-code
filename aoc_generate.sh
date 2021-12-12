@@ -29,5 +29,9 @@ input = pathlib.Path(input_filename).read_text().strip()
 numbers = input.split("\n")
 EOF
 chmod +x "$1/script.py"
+touch "$1/input"
+touch "$1/sample"
 subl "$1/script.py"
+subl "$1/input"
+subl "$1/sample"
 ../hud "./$1" & disown
