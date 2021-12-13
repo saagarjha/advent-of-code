@@ -317,3 +317,303 @@ def sj_irange(min, max, stride=1):
 
 def sj_range(min, max, stride=1):
 	return list(range(min, max, stride)) if min <= max else range(-min, -max, stride).map(operator.neg)
+
+class Matrix:
+	def __init__(self, matrix):
+		self.matrix = matrix
+		self.rows = matrix.len
+		self.columns = matrix[0].len if self.rows else 0
+
+	def inside(self, r, c):
+		return r >= 0 and r < self.rows and c >= 0 and c < self.columns
+
+
+	def __getitem__(self, index):
+		return self.matrix[index[0]][index[1]] if self.inside(index[0], index[1]) else None
+
+	def __setitem__(self, index, value):
+		if self.inside(index[0], index[1]):
+			self.matrix[index[0]][index[1]] = value
+
+	def neighbors8(self, r, c):
+		neighbors = []
+		for row in sj_irange(r - 1, r + 1):
+			for column in sj_irange(c - 1, c + 1):
+				if self.inside(row, column) and (row != r or column != c):
+					neighbors.append((row, column))
+		return neighbors
+
+	def neighbors4(self, r, c):
+		neighbors = []
+		if self.inside(r - 1, c):
+			neighbors.append((r - 1, c))
+		if self.inside(r, c - 1):
+			neighbors.append((r, c - 1))
+		if self.inside(r, c + 1):
+			neighbors.append((r, c + 1))
+		if self.inside(r + 1, c):
+			neighbors.append((r + 1, c))
+		return neighbors
+
+class UnevaluatedProxy:
+	def __init__(self, expression):
+		self.__expression = expression
+
+	def __unevaluate_arguments(f):
+		def trampoline(*args):
+			new_args = []
+			for arg in args:
+				if not hasattr(arg, "__"):
+					new_args.append(UnevaluatedProxy(lambda *args: arg))
+				else:
+					new_args.append(arg)
+			return f(*new_args)
+		return trampoline
+
+	def __eval(self, *args):
+		return self.__expression(*args)
+
+	def __(self, *_args):
+		return UnevaluatedProxy(lambda *args: self.__expression(*args)(*_args))
+
+	def __call__(self, *args):
+		return self.__expression(*args)
+
+	@__unevaluate_arguments
+	def __eq__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) == other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __ne__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) != other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __lt__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) < other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __gt__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) > other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __le__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) <= other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __ge__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) >= other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __pos__(self):
+		return UnevaluatedProxy(lambda *args: +self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __neg__(self):
+		return UnevaluatedProxy(lambda *args: -self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __abs__(self):
+		return UnevaluatedProxy(lambda *args: abs(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __invert__(self):
+		return UnevaluatedProxy(lambda *args: ~self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __round__(self, n):
+		return UnevaluatedProxy(lambda *args: round(self.__eval(*args), n.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __floor__(self):
+		return UnevaluatedProxy(lambda *args: math.floor(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __ceil__(self):
+		return UnevaluatedProxy(lambda *args: math.ceil(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __trunc__(self):
+		return UnevaluatedProxy(lambda *args: math.trunc(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __add__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) + other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __sub__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) - other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __mul__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) * other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __floordiv__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) // other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __div__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) / other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __mod__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) % other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __divmod__(self, other):
+		return UnevaluatedProxy(lambda *args: divmod(self.__eval(*args), other.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __pow__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) ** other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __lshift__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) << other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rshift__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) >> other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __and__(self, other):
+	 	return UnevaluatedProxy(lambda *args: self.__eval(*args) & other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __or__(self, other):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) | other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __xor__(self, other):
+	 	return UnevaluatedProxy(lambda *args: self.__eval(*args) ^ other.__eval(*args))
+
+	@__unevaluate_arguments
+	def __radd__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) + self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rsub__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) - self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rmul__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) * self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rfloordiv__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) // self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rdiv__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) / self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rmod__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) % self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rdivmod__(self, other):
+		return UnevaluatedProxy(lambda *args: divmod(other.__eval(*args), self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __rpow__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) ** self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rlshift__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) << self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rrshift__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) >> self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rand__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) & self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __ror__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) | self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __rxor__(self, other):
+		return UnevaluatedProxy(lambda *args: other.__eval(*args) ^ self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __str__(self):
+		return UnevaluatedProxy(lambda *args: str(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __repr__(self):
+		return UnevaluatedProxy(lambda *args: repr(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __unicode__(self):
+		return UnevaluatedProxy(lambda *args: unicode(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __format__(self, formatstr):
+		return UnevaluatedProxy(lambda *args: format(self.__eval(*args), formatstr.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __hash__(self):
+		return UnevaluatedProxy(lambda *args: hash(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __nonzero__(self):
+		return UnevaluatedProxy(lambda *args: not not self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __dir__(self):
+		return UnevaluatedProxy(lambda *args: dir(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __sizeof__(self):
+		return UnevaluatedProxy(lambda *args: sys.getsizeof(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __getattr__(self, attr):
+		return UnevaluatedProxy(lambda *args: getattr(self.__eval(*args), attr.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __len__(self):
+		return UnevaluatedProxy(lambda *args: len(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __getitem__(self, key):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args)[key.__eval(*args)])
+
+	@__unevaluate_arguments
+	def __iter__(self):
+		return UnevaluatedProxy(lambda *args: iter(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __reversed__(self):
+		return UnevaluatedProxy(lambda *args: reversed(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __contains__(self, item):
+		return UnevaluatedProxy(lambda *args: item.__eval(*args) in self.__eval(*args))
+
+	@__unevaluate_arguments
+	def __missing__(self, key):
+		return UnevaluatedProxy(lambda *args: self.__eval(*args)[key.__eval(*args)])
+
+	@__unevaluate_arguments
+	def __instancecheck__(self, instance):
+		return UnevaluatedProxy(lambda *args: isinstance(instance.__eval(*args), self.__eval(*args)[key]))
+
+	@__unevaluate_arguments
+	def __subclasscheck__(self, subclass):
+		return UnevaluatedProxy(lambda *args: issubclass(subclass.__eval(*args), self.__eval(*args)[key]))
+
+	@__unevaluate_arguments
+	def __copy__(self):
+		return UnevaluatedProxy(lambda *args: copy.copy(self.__eval(*args)))
+
+	@__unevaluate_arguments
+	def __deepcopy__(self, memodict={}):
+		return UnevaluatedProxy(lambda *args: copy.deepcopy(self.__eval(*args), memodict.__eval(*args)))
+
+for i in range(10):
+	__builtins__[f"_{i}"] = UnevaluatedProxy(lambda *args, i = i: args[i])
