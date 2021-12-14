@@ -75,7 +75,8 @@ class OutputViewController: NSViewController {
 
 	func updateOutput() {
 		let process = Process()
-		process.launchPath = root.appendingPathComponent("script.py").path
+		process.launchPath = root.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("repl.py").path
+		process.arguments = [root.appendingPathComponent("script.py").path]
 		process.currentDirectoryURL = root
 		if sample {
 			process.environment = ["AOC_SAMPLE": "1"]
@@ -101,10 +102,11 @@ class OutputViewController: NSViewController {
 						updateTask.cancel()
 					}
 					lines = 0
-					for try await line in pipe.fileHandleForReading.bytes.lines {
-						buffer.append(line)
-						buffer.append("\n")
-						lines += 1
+					for try await byte in pipe.fileHandleForReading.bytes {
+						buffer.append(String(UnicodeScalar(byte)))
+						if byte == 0x0a {
+							lines += 1
+						}
 					}
 					return buffer.text
 				}.value
@@ -281,7 +283,7 @@ let root = URL(fileURLWithPath: CommandLine.arguments[1])
 let year = Int(root.deletingLastPathComponent().lastPathComponent)!
 let day = Int(root.lastPathComponent)!
 let script = open(root.appendingPathComponent("script.py").path, O_EVTONLY)
-let session = String(data: try! Data(contentsOf: root.deletingPathExtension().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("session")), encoding: .utf8)!
+let session = String(data: try! Data(contentsOf: root.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("session")), encoding: .utf8)!
 
 let window = Window(contentViewController: ViewController())
 window.styleMask.remove(.titled)
