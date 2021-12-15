@@ -26,7 +26,7 @@ if "AOC_SAMPLE" in os.environ:
 	input_filename = "sample"
 
 input = pathlib.Path(input_filename).read_text().strip()
-numbers = input.split("\n")
+numbers = input.split("\n").map(int)
 EOF
 chmod +x "$1/script.py"
 touch "$1/input"
