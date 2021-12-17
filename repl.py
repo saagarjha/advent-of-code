@@ -15,7 +15,7 @@ class Visitor(ast.NodeTransformer):
 				ast.fix_missing_locations(assign)
 				new_body.append(assign)
 				condition = ast.copy_location(
-					ast.If(ast.Name("__repl_intermediate", ast.Load()), [
+					ast.If(ast.Compare(ast.Name("__repl_intermediate", ast.Load()), [ast.NotEq()], [ast.Constant(None)]), [
 						ast.Expr(ast.Call(ast.Name('print', ast.Load()), [ast.Name("__repl_intermediate", ast.Load())], []))
 					], []), expression
 				)
