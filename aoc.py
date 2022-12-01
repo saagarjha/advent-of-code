@@ -1,4 +1,4 @@
-import collections
+import collections.abc
 import ctypes
 import gc
 import operator
@@ -138,7 +138,7 @@ def __list_enumerated(self):
 def __list_flatten(self):
 	result = []
 	for e in self:
-		if isinstance(e, collections.Iterable):
+		if isinstance(e, collections.abc.Iterable):
 			result += e
 		else:
 			result.append(e)

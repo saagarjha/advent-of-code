@@ -225,7 +225,7 @@ class ViewController: NSViewController {
 			tabViewController.view.leadingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: view.leadingAnchor, multiplier: 1),
 			view.trailingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: tabViewController.view.trailingAnchor, multiplier: 1),
 			tabViewController.view.topAnchor.constraint(equalToSystemSpacingBelow: titleLabel.bottomAnchor, multiplier: 1),
-			tabViewController.view.widthAnchor.constraint(greaterThanOrEqualToConstant: 400),
+			tabViewController.view.widthAnchor.constraint(greaterThanOrEqualToConstant: 375),
 			tabViewController.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 500),
 			outputInfoLabel.leadingAnchor.constraint(equalToSystemSpacingAfter: view.leadingAnchor, multiplier: 1),
 			copyButton.leadingAnchor.constraint(greaterThanOrEqualToSystemSpacingAfter: outputInfoLabel.trailingAnchor, multiplier: 1),
