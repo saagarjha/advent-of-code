@@ -106,6 +106,9 @@ def __list_last_index_by(self, predicate):
 			return i
 	return None
 
+def __list_reversed(self):
+	return list(self)[::-1]
+
 def __list_map(self, transform):
 	results = []
 	for e in self:
@@ -228,9 +231,32 @@ def __list_exclude_each(self):
 def __list_swap(self, i, j):
 	(self[i], self[j]) = (self[j], self[i])
 
-def __list_sorted(self):
+def __list_sorted(self, predicate=None):
+	class comparator:
+		def __init__(self, object):
+			self.object = object
+
+		def __lt__(self, other):
+			return predicate(self.object, other.object)
+
+		def __gt__(self, other):
+			return predicate(other.object, self.object)
+
+		def __eq__(self, other):
+			return not predicate(self.object, other.object) and not predicate(other.object, self.object)
+
+		def __le__(self, other):
+			return not predicate(other.object, self.object)
+
+		def __ge__(self, other):
+			return not predicate(self.object, other.object)
+
+		def __ne__(self, other):
+			return predicate(self.object, other.object) or predicate(other.object, self.object)
+
+	key = None if predicate is None else comparator
 	copy = list(self[:])
-	copy.sort()
+	copy.sort(key=key)
 	return copy
 
 def __list_rotate(self, index):
@@ -248,6 +274,9 @@ def __list2d_diagonals(self):
 	diagonal11 = self.indices().map(lambda i: self[i][i])
 	diagonal12 = self.indices().map(lambda i: self[i][-(i + 1)])
 	return (diagonal11, diagonal12)
+
+def __list_sum(self):
+	return self.fold(operator.add)
 
 __extend(object, 'sj_print', __object_sj_print)
 
@@ -274,14 +303,19 @@ for type in [list, str, tuple, set, dict, zip, range]:
 	__extend(type, 'flatten', __list_flatten)
 	__extend(type, 'compact', __list_compact)
 	__extend(type, 'exclude_each', __list_exclude_each)
+	__extend(type, 'sum', __list_sum)
 
-for type in [list, str, tuple]:
+for type in [list, str, tuple, set, zip, range]:
+	__extend(type, 'max', __list_max)
+	__extend(type, 'min', __list_min)
+	__extend(type, 'reversed', __list_reversed)
+	__extend(type, 'flatten', __list_flatten)
+
+for type in [list, str, tuple, range]:
 	__extend(type, 'indices', __list_indices)
 	__extend(type, 'first', __list_first)
 	__extend(type, 'last', __list_last)
 	__extend(type, 'random', __list_random)
-	__extend(type, 'max', __list_max)
-	__extend(type, 'min', __list_min)
 	__extend(type, 'max_index', __list_max_index)
 	__extend(type, 'min_index', __list_min_index)
 	__extend(type, 'max_by', __list_max_by)
@@ -295,13 +329,11 @@ for type in [list, str, tuple]:
 	__extend(type, 'last_by', __list_last_by)
 	__extend(type, 'last_index_by', __list_last_index_by)
 	__extend(type, 'enumerated', __list_enumerated)
-	__extend(type, 'swap', __list_swap)
 	__extend(type, 'sorted', __list_sorted)
-	__extend(type, 'rotate', __list_rotate)
 
-__extend(set, 'min', __list_len)
-__extend(set, 'max', __list_len)
-__extend(set, 'flatten', __list_flatten)
+for type in [list, str, tuple]:
+	__extend(type, 'swap', __list_swap)
+	__extend(type, 'rotate', __list_rotate)
 
 def __sj_irange(min, max, stride):
 	result = []
@@ -378,6 +410,14 @@ class UnevaluatedProxy:
 
 	def __call__(self, *args):
 		return self.__expression(*args)
+
+	@property
+	def _int(self):
+		return UnevaluatedProxy(lambda *args: int(self.__eval(*args)))
+
+	@property
+	def _str(self):
+		return UnevaluatedProxy(lambda *args: str(self.__eval(*args)))
 
 	@__unevaluate_arguments
 	def __eq__(self, other):
@@ -477,7 +517,7 @@ class UnevaluatedProxy:
 
 	@__unevaluate_arguments
 	def __and__(self, other):
-	 	return UnevaluatedProxy(lambda *args: self.__eval(*args) & other.__eval(*args))
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) & other.__eval(*args))
 
 	@__unevaluate_arguments
 	def __or__(self, other):
@@ -485,7 +525,7 @@ class UnevaluatedProxy:
 
 	@__unevaluate_arguments
 	def __xor__(self, other):
-	 	return UnevaluatedProxy(lambda *args: self.__eval(*args) ^ other.__eval(*args))
+		return UnevaluatedProxy(lambda *args: self.__eval(*args) ^ other.__eval(*args))
 
 	@__unevaluate_arguments
 	def __radd__(self, other):
