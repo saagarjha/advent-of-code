@@ -58,5 +58,6 @@ print("matrix dimensions", matrix.rows, matrix.columns)
 print("matrix subscript", matrix[1, 1])
 matrix[1, 1] += 10
 print("matrix modify", matrix[1, 1])
-print("matrix neighbors", matrix.neighbors4(0, 0), matrix.neighbors4(1, 1), matrix.neighbors4(2, 2))
-print("matrix neighbors", matrix.neighbors8(0, 0), matrix.neighbors8(1, 1), matrix.neighbors8(2, 2))
+print("matrix neighbors8", matrix.neighbors8(0, 0), matrix.neighbors8(1, 1), matrix.neighbors8(2, 2))
+print("matrix neighbors4", matrix.neighbors4(0, 0), matrix.neighbors4(1, 1), matrix.neighbors4(2, 2))
+print("matrix neighbors4_diag", matrix.neighbors4_diag(0, 0), matrix.neighbors4_diag(1, 1), matrix.neighbors4_diag(2, 2))

@@ -387,6 +387,18 @@ class Matrix:
 			neighbors.append((r + 1, c))
 		return neighbors
 
+	def neighbors4_diag(self, r, c):
+		neighbors = []
+		if self.inside(r - 1, c - 1):
+			neighbors.append((r - 1, c - 1))
+		if self.inside(r + 1, c - 1):
+			neighbors.append((r + 1, c - 1))
+		if self.inside(r - 1, c + 1):
+			neighbors.append((r - 1, c + 1))
+		if self.inside(r + 1, c + 1):
+			neighbors.append((r + 1, c + 1))
+		return neighbors
+
 class UnevaluatedProxy:
 	def __init__(self, expression):
 		self.__expression = expression
@@ -410,6 +422,10 @@ class UnevaluatedProxy:
 
 	def __call__(self, *args):
 		return self.__expression(*args)
+
+	@property
+	def _unflatten(self):
+		return UnevaluatedProxy(lambda *args: UnevaluatedProxy(lambda *args: self.__eval(*args[0])))()
 
 	@property
 	def _int(self):

@@ -290,8 +290,8 @@ window.styleMask.remove(.titled)
 window.backgroundColor = .clear
 window.isMovableByWindowBackground = true
 let screen = NSScreen.main!.visibleFrame
-let offset: CGFloat = 16
-window.setFrameOrigin(NSPoint(x: screen.maxX - offset - window.frame.width, y: screen.maxY - 4 * offset - window.frame.height))
+let offset: CGFloat = 0
+window.setFrameOrigin(NSPoint(x: screen.maxX - offset - window.frame.width, y: screen.minY + 4 * offset))
 window.level = .floating
 window.collectionBehavior = .canJoinAllSpaces
 NSApp.setActivationPolicy(.accessory)

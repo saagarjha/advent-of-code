@@ -1,13 +1,3 @@
-#!/bin/bash
-
-set -eux
-
-if [ "$PWD" != "/Users/saagarjha/Developer/advent-of-code/2022" ]; then
-	exit 1
-fi
-
-mkdir "$1"
-cat > "$1/script.py" <<EOF
 #!/usr/bin/env python3
 
 from collections import Counter
@@ -27,12 +17,17 @@ if "AOC_SAMPLE" in os.environ:
 	input_filename = "sample"
 
 input = pathlib.Path(input_filename).read_text().strip()
-numbers = input.split("\n").map(int)
-EOF
-chmod +x "$1/script.py"
-touch "$1/input"
-touch "$1/sample"
-subl "$1/script.py"
-subl "$1/input"
-subl "$1/sample"
-../hud "./$1" 2> /dev/null & disown
+rucksacks = input.split("\n")
+rucksacks
+sum = 0
+for rucksack in rucksacks:
+	part1 = rucksack[:rucksack.len // 2]
+	part2 = rucksack[rucksack.len // 2:]
+	c = list(set(part1).intersection(set(part2)))[0]
+	if c.lower() == c:
+		sum += ord(c) - ord('a') + 1
+	else:
+		sum += ord(c.upper()) - ord('A') + 26 + 1
+
+sum
+
