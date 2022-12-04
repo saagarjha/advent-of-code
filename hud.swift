@@ -75,7 +75,7 @@ class OutputViewController: NSViewController {
 
 	func updateOutput() {
 		let process = Process()
-		process.launchPath = root.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("repl.py").path
+		process.launchPath = root.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("aoc_repl.py").path
 		process.arguments = [root.appendingPathComponent("script.py").path]
 		process.currentDirectoryURL = root
 		if sample {
@@ -157,6 +157,8 @@ class ViewController: NSViewController {
 		let titleLabel = NSTextField(labelWithString: "Challenge \(root.lastPathComponent)")
 		titleLabel.font = NSFont.systemFont(ofSize: 20)
 		titleLabel.translatesAutoresizingMaskIntoConstraints = false
+		titleLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+		titleLabel.cell?.lineBreakMode = .byTruncatingHead
 		view.addSubview(titleLabel)
 
 		timeLabel = NSTextField(labelWithString: "")

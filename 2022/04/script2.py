@@ -1,13 +1,3 @@
-#!/bin/bash
-
-set -eux
-
-if [ "$PWD" != "/Users/saagarjha/Developer/advent-of-code/2022" ]; then
-	exit 1
-fi
-
-mkdir "$1"
-cat > "$1/script.py" <<EOF
 #!/usr/bin/env aoc_repl.py
 
 from collections import Counter
@@ -27,12 +17,13 @@ if "AOC_SAMPLE" in os.environ:
 	input_filename = "sample"
 
 input = pathlib.Path(input_filename).read_text().strip()
-numbers = input.split("\n").map(int)
-EOF
-chmod +x "$1/script.py"
-touch "$1/input"
-touch "$1/sample"
-subl "$1/script.py"
-subl "$1/sample"
-subl "$1/input"
-../hud "./$1" 2> /dev/null & disown
+assignments = []
+for line in input.split("\n"):
+	assignments.append(line.split(",").map(`<_0.split("-").map(int)`>))
+
+sum = 0
+for assignment in assignments:
+	(a, b) = (assignment[0], assignment[1])
+	if (a[0] <= b[0] and a[1] >= b[0]) or (b[0] <= a[0] and b[1] >= a[0]):
+		sum += 1
+sum
