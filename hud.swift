@@ -174,7 +174,7 @@ class ViewController: NSViewController {
 		components.day = day - 1
 		components.hour = 21
 		components.minute = 0
-		components.timeZone = TimeZone.init(abbreviation: "America/New_York")
+		components.timeZone = TimeZone(abbreviation: "America/New_York")
 		start = Calendar(identifier: .gregorian).date(from: components)!
 		let formatter = DateComponentsFormatter()
 
