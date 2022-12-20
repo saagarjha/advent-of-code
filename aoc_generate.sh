@@ -10,7 +10,7 @@ mkdir "$1"
 cat > "$1/script.py" <<EOF
 #!/usr/bin/env aoc_repl.py
 
-from collections import Counter, deque
+from collections import Counter, defaultdict, deque
 import heapq
 import inspect
 import itertools
