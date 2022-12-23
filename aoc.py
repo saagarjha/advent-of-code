@@ -101,7 +101,7 @@ def __list_last_by(self, predicate):
 	return self[index] if index != None else None
 
 def __list_last_index_by(self, predicate):
-	for i in self.indices()[:-1]:
+	for i in self.indices()[::-1]:
 		if predicate(self[i]):
 			return i
 	return None
